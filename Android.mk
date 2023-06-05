@@ -20,6 +20,8 @@ KBUILD_OPTIONS += BOARD_PLATFORM=$(TARGET_BOARD_PLATFORM)
 DLKM_DIR   := device/qcom/common/dlkm
 
 LOCAL_PATH := $(call my-dir)
+LOCAL_MODULE_DDK_BUILD    := true
+LOCAL_MODULE_KO_DIRS      := driver/msm-mmrm.ko test/mmrm_test_module.ko
 
 include $(CLEAR_VARS)
 # For incremental compilation
