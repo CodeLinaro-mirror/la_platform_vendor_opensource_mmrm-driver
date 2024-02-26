@@ -1,4 +1,4 @@
-ifneq ($(TARGET_USES_QMAA),true)
+ifneq ($(TARGET_BOARD_PLATFORM), monaco)
 ifeq ($(call is-board-platform-in-list,$(TARGET_BOARD_PLATFORM)),true)
 BOARD_VENDOR_KERNEL_MODULES += $(KERNEL_MODULES_OUT)/msm-mmrm.ko
 BOARD_VENDOR_RAMDISK_KERNEL_MODULES += $(KERNEL_MODULES_OUT)/msm-mmrm.ko
