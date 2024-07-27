@@ -36,3 +36,6 @@ ddk_headers(
 
 load(":target.bzl", "define_blair")
 define_blair()
+
+load(":target.bzl", "define_neo_la")
+define_neo_la()
