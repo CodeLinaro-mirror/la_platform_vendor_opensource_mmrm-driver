@@ -20,7 +20,6 @@ def _get_kernel_build_options(modules, config_options):
 
 def _get_kernel_build_module_srcs(module, options, formatter):
     srcs = module.srcs
-    print("srcs = ", srcs)
     module_path = "{}/".format(module.path) if module.path else ""
     globbed_srcs = native.glob(["{}{}".format(module_path, formatter(src)) for src in srcs])
     return globbed_srcs
