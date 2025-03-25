@@ -7,7 +7,6 @@ def define_blair():
         registry = mmrm_driver_modules,
         modules = [
             "msm-mmrm",
-            "mmrm_test_module",
         ],
 )
 
@@ -17,6 +16,5 @@ def define_neo_la():
         registry = mmrm_driver_modules,
         modules = [
             "msm-mmrm",
-            "mmrm_test_module",
         ],
 )
