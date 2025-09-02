@@ -1,4 +1,4 @@
-ifneq ($(filter $(TARGET_BOARD_PLATFORM), monaco vienna),$(TARGET_BOARD_PLATFORM))
+ifneq ($(filter $(TARGET_BOARD_PLATFORM), monaco vienna bengal),$(TARGET_BOARD_PLATFORM))
 BOARD_OPENSOURCE_DIR ?= vendor/qcom/opensource
 BOARD_COMMON_DIR ?= device/qcom/common
 
