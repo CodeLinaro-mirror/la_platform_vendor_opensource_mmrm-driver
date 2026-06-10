@@ -7,6 +7,10 @@ else
 TARGET_MMRM_ENABLE := true
 endif
 
+ifeq ($(TARGET_BOARD_PLATFORM),shikra)
+TARGET_MMRM_ENABLE := false
+endif
+
 # Build mmrm kernel driver
 ifeq ($(TARGET_MMRM_ENABLE),true)
 ifeq ($(call is-board-platform-in-list,$(TARGET_BOARD_PLATFORM)),true)
@@ -17,3 +21,4 @@ BOARD_VENDOR_RAMDISK_RECOVERY_KERNEL_MODULES_LOAD += $(KERNEL_MODULES_OUT)/msm-m
 # BOARD_VENDOR_KERNEL_MODULES += $(KERNEL_MODULES_OUT)/mmrm_test_module.ko
 endif
 endif
+
