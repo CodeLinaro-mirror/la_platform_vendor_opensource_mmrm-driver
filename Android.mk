@@ -7,6 +7,10 @@ else
 TARGET_MMRM_ENABLE := true
 endif
 
+ifeq ($(TARGET_BOARD_PLATFORM),shikra)
+TARGET_MMRM_ENABLE := false
+endif
+
 ifeq ($(TARGET_MMRM_ENABLE),true)
 MMRM_BLD_DIR := $(shell pwd)/vendor/qcom/opensource/mmrm-driver
 
