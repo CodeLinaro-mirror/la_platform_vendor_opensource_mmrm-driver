@@ -3,6 +3,7 @@
  * Copyright (c) 2020-2021, The Linux Foundation. All rights reserved.
  */
 #include <linux/slab.h>
+#include <linux/string.h>
 #include <dt-bindings/regulator/qcom,rpmh-regulator-levels.h>
 #include <linux/clk.h>
 #include <linux/clk/qcom.h>
@@ -14,7 +15,7 @@
 #define Q16_INT(q) ((q) >> 16)
 #define Q16_FRAC(q) ((((q) & 0xFFFF) * 100) >> 16)
 #define CLK_RATE_STEP 1000000
-#define NOTIFY_TIMEOUT 100000000
+#define NOTIFY_TIMEOUT 100000000ULL
 
 static int mmrm_sw_update_freq(
 	struct mmrm_sw_clk_mgr_info *sinfo, struct mmrm_sw_clk_client_tbl_entry *tbl_entry)
@@ -29,7 +30,7 @@ static int mmrm_sw_update_freq(
 
 	clk_val_min = clk_round_rate(tbl_entry->clk, 1);
 	clk_val_max = clk_round_rate(tbl_entry->clk, ~0UL);
-	d_mpr_h("%s: csid(0x%x): min_clk_rate(%llu) max_clk_rate(%llu)\n",
+	d_mpr_h("%s: csid(0x%x): min_clk_rate(%lu) max_clk_rate(%lu)\n",
 		__func__,
 		tbl_entry->clk_src_id,
 		clk_val_min,
@@ -91,7 +92,7 @@ static void mmrm_sw_print_client_data(struct mmrm_sw_clk_mgr_info *sinfo,
 	u32 i, j;
 
 	for (i = 0; i < MMRM_VDD_LEVEL_MAX; i++) {
-		d_mpr_p("%s: csid(0x%x) corner(%s) dyn_pwr(%zu) leak_pwr(%zu)\n",
+		d_mpr_p("%s: csid(0x%x) corner(%s) dyn_pwr(%u) leak_pwr(%u)\n",
 				__func__,
 				tbl_entry->clk_src_id,
 				cset->corner_tbl[i].name,
@@ -99,7 +100,7 @@ static void mmrm_sw_print_client_data(struct mmrm_sw_clk_mgr_info *sinfo,
 				tbl_entry->leak_pwr[i]);
 
 		for (j = 0; j < MMRM_VDD_LEVEL_MAX; j++) {
-			d_mpr_p("%s: csid(0x%x) total_pwr(%zu) cur_ma(%zu)\n",
+			d_mpr_p("%s: csid(0x%x) total_pwr(%u) cur_ma(%u)\n",
 				__func__,
 				tbl_entry->clk_src_id,
 				(tbl_entry->dyn_pwr[i] + tbl_entry->leak_pwr[i]),
@@ -250,7 +251,7 @@ static struct mmrm_client *mmrm_sw_clk_client_register(
 
 	/* copy the entries provided by client */
 	tbl_entry->client = clk_client;
-	strlcpy(tbl_entry->name, clk_desc.name, MMRM_CLK_CLIENT_NAME_SIZE);
+	strscpy(tbl_entry->name, clk_desc.name, MMRM_CLK_CLIENT_NAME_SIZE);
 	tbl_entry->clk = clk_desc.clk;
 	tbl_entry->pri = priority;
 	tbl_entry->pvt_data = pvt_data;
@@ -311,7 +312,7 @@ static int mmrm_sw_clk_client_deregister(struct mmrm_clk_mgr *sw_clk_mgr,
 
 	/* validate the client ptr */
 	if (!client) {
-		d_mpr_e("%s: invalid client\n");
+		d_mpr_e("%s: invalid client\n", __func__);
 		rc = -EINVAL;
 		goto err_invalid_client;
 	}
@@ -362,7 +363,7 @@ static int mmrm_sw_get_req_level(
 	/* get voltage corner */
 	voltage_corner = qcom_clk_get_voltage(tbl_entry->clk, clk_val);
 	if (voltage_corner < 0 || voltage_corner > mmrm_sw_vdd_corner[MMRM_VDD_LEVEL_TURBO]) {
-		d_mpr_e("%s: csid(0x%x): invalid voltage corner(%d) for clk rate(%llu)\n",
+		d_mpr_e("%s: csid(0x%x): invalid voltage corner(%d) for clk rate(%lu)\n",
 			__func__,
 			tbl_entry->clk_src_id,
 			voltage_corner,
@@ -388,7 +389,7 @@ static int mmrm_sw_get_req_level(
 	}
 
 	if (level == MMRM_VDD_LEVEL_MAX) {
-		d_mpr_e("%s: csid(0x%x): invalid voltage corner(%d) for clk rate(%llu)\n",
+		d_mpr_e("%s: csid(0x%x): invalid voltage corner(%d) for clk rate(%lu)\n",
 			__func__,
 			tbl_entry->clk_src_id,
 			voltage_corner,
@@ -418,7 +419,7 @@ static int mmrm_sw_check_req_level(
 	u32 c, level = req_level;
 
 	if (req_level >= MMRM_VDD_LEVEL_MAX) {
-		d_mpr_e("%s: invalid level %lu\n", __func__, req_level);
+		d_mpr_e("%s: invalid level %u\n", __func__, req_level);
 		rc = -EINVAL;
 		goto err_invalid_level;
 	}
@@ -467,7 +468,7 @@ static int mmrm_sw_calculate_total_current(
 	u32 c, sum_cur = 0;
 
 	if (req_level >= MMRM_VDD_LEVEL_MAX) {
-		d_mpr_e("%s: invalid level %lu\n", __func__, req_level);
+		d_mpr_e("%s: invalid level %u\n", __func__, req_level);
 		rc = -EINVAL;
 		goto err_invalid_level;
 	}
@@ -484,7 +485,7 @@ static int mmrm_sw_calculate_total_current(
 	}
 
 	*total_cur = sum_cur;
-	d_mpr_h("%s: total_cur(%lu)\n", __func__, *total_cur);
+	d_mpr_h("%s: total_cur(%u)\n", __func__, *total_cur);
 	return rc;
 
 err_invalid_level:
@@ -521,7 +522,7 @@ static int mmrm_sw_throttle_low_priority_client(
 			d_mpr_h("%s:csid(0x%x) name(%s)\n",
 				__func__, tbl_entry_throttle_client->clk_src_id,
 				tbl_entry_throttle_client->name);
-			d_mpr_h("%s:now_cur_ma(%llu) min_cur_ma(%llu) delta_cur(%d)\n",
+			d_mpr_h("%s:now_cur_ma(%u) min_cur_ma(%u) delta_cur(%d)\n",
 				__func__, now_cur_ma, min_cur_ma, *delta_cur);
 
 			if ((now_cur_ma > min_cur_ma)
@@ -530,7 +531,7 @@ static int mmrm_sw_throttle_low_priority_client(
 				d_mpr_h("%s: Throttle client csid(0x%x) name(%s)\n",
 					__func__, tbl_entry_throttle_client->clk_src_id,
 					tbl_entry_throttle_client->name);
-				d_mpr_h("%s:now_cur_ma %llu-min_cur_ma %llu>delta_cur %d\n",
+				d_mpr_h("%s:now_cur_ma %u-min_cur_ma %u>delta_cur %d\n",
 					__func__, now_cur_ma, min_cur_ma, *delta_cur);
 				/* found client to throttle, break from here. */
 				break;
@@ -619,7 +620,7 @@ static void mmrm_sw_dump_enabled_client_info(struct mmrm_sw_clk_mgr_info *sinfo)
 	for (c = 0; c < sinfo->tot_clk_clients; c++) {
 		tbl_entry = &sinfo->clk_client_tbl[c];
 		if (tbl_entry->clk_rate) {
-			d_mpr_e("%s: csid(0x%x) clk_rate(%zu) vdd_level(%zu) cur_ma(%zu) num_hw_blocks(%zu)\n",
+			d_mpr_e("%s: csid(0x%x) clk_rate(%llu) vdd_level(%u) cur_ma(%u) num_hw_blocks(%u)\n",
 				__func__,
 				tbl_entry->clk_src_id,
 				tbl_entry->clk_rate,
@@ -630,7 +631,7 @@ static void mmrm_sw_dump_enabled_client_info(struct mmrm_sw_clk_mgr_info *sinfo)
 		}
 	}
 	if (peak_data) {
-		d_mpr_e("%s: aggreg_val(%zu) aggreg_level(%zu)\n", __func__,
+		d_mpr_e("%s: aggreg_val(%u) aggreg_level(%u)\n", __func__,
 			peak_data->aggreg_val, peak_data->aggreg_level);
 	}
 }
@@ -739,7 +740,7 @@ static int mmrm_sw_check_peak_current(struct mmrm_sw_clk_mgr_info *sinfo,
 		delta_cur = (signed int)new_cur - old_cur;
 	}
 
-	d_mpr_h("%s: csid (0x%x) peak_cur(%zu) new_cur(%zu) old_cur(%zu) delta_cur(%d)\n",
+	d_mpr_h("%s: csid (0x%x) peak_cur(%u) new_cur(%u) old_cur(%u) delta_cur(%d)\n",
 		__func__, tbl_entry->clk_src_id, peak_cur, new_cur, old_cur, delta_cur);
 
 	/* negative value, update peak data */
@@ -777,7 +778,7 @@ static int mmrm_sw_check_peak_current(struct mmrm_sw_clk_mgr_info *sinfo,
 	mmrm_reinstate_throttled_client(sinfo);
 
 exit_no_err:
-	d_mpr_h("%s: aggreg_val(%lu) aggreg_level(%lu)\n",
+	d_mpr_h("%s: aggreg_val(%u) aggreg_level(%u)\n",
 		__func__,
 		peak_data->aggreg_val,
 		peak_data->aggreg_level);
@@ -801,7 +802,7 @@ static int mmrm_sw_clk_client_setval(struct mmrm_clk_mgr *sw_clk_mgr,
 
 	/* validate input params */
 	if (!client) {
-		d_mpr_e("%s: invalid client\n");
+		d_mpr_e("%s: invalid client\n", __func__);
 		rc = -EINVAL;
 		goto err_invalid_client;
 	}
@@ -822,11 +823,11 @@ static int mmrm_sw_clk_client_setval(struct mmrm_clk_mgr *sw_clk_mgr,
 	/* get table entry */
 	tbl_entry = &sinfo->clk_client_tbl[client->client_uid];
 	if (IS_ERR_OR_NULL(tbl_entry->clk)) {
-		d_mpr_e("%s: clk src not registered\n");
+		d_mpr_e("%s: clk src not registered\n", __func__);
 		rc = -EINVAL;
 		goto err_invalid_client;
 	}
-	d_mpr_h("%s: csid(0x%x) clk rate %llu\n",
+	d_mpr_h("%s: csid(0x%x) clk rate %lu\n",
 		__func__, tbl_entry->clk_src_id, clk_val);
 
 	/* Check if the requested clk rate is the same as the current clk rate.
@@ -842,7 +843,7 @@ static int mmrm_sw_clk_client_setval(struct mmrm_clk_mgr *sw_clk_mgr,
 	if (tbl_entry->clk_rate == clk_val &&
 		tbl_entry->num_hw_blocks == client_data->num_hw_blocks) {
 
-		d_mpr_h("%s: csid(0x%x) same as previous clk rate %llu\n",
+		d_mpr_h("%s: csid(0x%x) same as previous clk rate %lu\n",
 			__func__, tbl_entry->clk_src_id, clk_val);
 
 		/* a & b */
@@ -865,7 +866,7 @@ static int mmrm_sw_clk_client_setval(struct mmrm_clk_mgr *sw_clk_mgr,
 	if (clk_val) {
 		rc = mmrm_sw_get_req_level(tbl_entry, clk_val, &req_level);
 		if (rc || req_level >= MMRM_VDD_LEVEL_MAX) {
-			d_mpr_e("%s: csid(0x%x) unable to get level for clk rate %llu\n",
+			d_mpr_e("%s: csid(0x%x) unable to get level for clk rate %lu\n",
 				__func__, tbl_entry->clk_src_id, clk_val);
 			rc = -EINVAL;
 			goto err_invalid_clk_val;
@@ -887,7 +888,7 @@ static int mmrm_sw_clk_client_setval(struct mmrm_clk_mgr *sw_clk_mgr,
 	rc = mmrm_sw_check_peak_current(sinfo, tbl_entry,
 		req_level, clk_val, client_data->num_hw_blocks);
 	if (rc) {
-		d_mpr_e("%s: csid (0x%x) peak overshoot peak_cur(%lu)\n",
+		d_mpr_e("%s: csid (0x%x) peak overshoot peak_cur(%u)\n",
 			__func__, tbl_entry->clk_src_id,
 			sinfo->peak_cur_data.aggreg_val);
 		mutex_unlock(&sw_clk_mgr->lock);
@@ -911,11 +912,11 @@ static int mmrm_sw_clk_client_setval(struct mmrm_clk_mgr *sw_clk_mgr,
 	}
 
 set_clk_rate:
-	d_mpr_h("%s: csid(0x%x) setting clk rate %llu\n",
+	d_mpr_h("%s: csid(0x%x) setting clk rate %lu\n",
 		__func__, tbl_entry->clk_src_id, clk_val);
 	rc = clk_set_rate(tbl_entry->clk, clk_val);
 	if (rc) {
-		d_mpr_e("%s: csid(0x%x) failed to set clk rate %llu\n",
+		d_mpr_e("%s: csid(0x%x) failed to set clk rate %lu\n",
 			__func__, tbl_entry->clk_src_id, clk_val);
 		rc = -EINVAL;
 		/* TBD: incase of failure clk_rate is invalid */
@@ -956,7 +957,7 @@ static int mmrm_sw_clk_client_getval(struct mmrm_clk_mgr *sw_clk_mgr,
 
 	/* validate input params */
 	if (!client) {
-		d_mpr_e("%s: invalid client\n");
+		d_mpr_e("%s: invalid client\n", __func__);
 		rc = -EINVAL;
 		goto err_invalid_client;
 	}
@@ -970,7 +971,7 @@ static int mmrm_sw_clk_client_getval(struct mmrm_clk_mgr *sw_clk_mgr,
 
 	tbl_entry = &sinfo->clk_client_tbl[client->client_uid];
 	if (!tbl_entry->clk) {
-		d_mpr_e("%s: clk src not registered\n");
+		d_mpr_e("%s: clk src not registered\n", __func__);
 		rc = -EINVAL;
 		goto err_invalid_client;
 	}
@@ -1006,7 +1007,7 @@ static int mmrm_sw_clk_print_enabled_client_info(struct mmrm_clk_mgr *sw_clk_mgr
 		for (c = 0; (c < sinfo->tot_clk_clients) && (left_spaces > 1); c++) {
 			tbl_entry = &sinfo->clk_client_tbl[c];
 			if ((tbl_entry != NULL) && (tbl_entry->clk_rate)) {
-				len = scnprintf(buf, left_spaces, "0x%x    %zu   %zu   %zu   %zu\n",
+				len = scnprintf(buf, left_spaces, "0x%x    %llu   %u   %u   %u\n",
 					tbl_entry->clk_src_id,
 					tbl_entry->clk_rate,
 					tbl_entry->vdd_level,
@@ -1018,7 +1019,7 @@ static int mmrm_sw_clk_print_enabled_client_info(struct mmrm_clk_mgr *sw_clk_mgr
 			}
 		}
 		if (left_spaces > 1) {
-			len = scnprintf(buf, left_spaces, "aggreg_val(%zu) aggreg_level(%zu)\n",
+			len = scnprintf(buf, left_spaces, "aggreg_val(%u) aggreg_level(%u)\n",
 				peak_data->aggreg_val, peak_data->aggreg_level);
 			left_spaces -= len;
 		}

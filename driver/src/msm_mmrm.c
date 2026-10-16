@@ -4,6 +4,8 @@
  */
 
 #include <linux/module.h>
+#include <linux/version.h>
+#include <linux/of.h>
 #include <linux/of_platform.h>
 #include <linux/platform_device.h>
 #include <linux/slab.h>
@@ -541,7 +543,7 @@ err_exit:
 	return rc;
 }
 
-static int msm_mmrm_remove(struct platform_device *pdev)
+static int msm_mmrm_remove_int(struct platform_device *pdev)
 {
 	int rc = 0;
 
@@ -569,6 +571,15 @@ err_exit:
 	d_mpr_e("%s: error = %d\n", __func__, rc);
 	return rc;
 }
+
+#if (KERNEL_VERSION(6, 10, 0) <= LINUX_VERSION_CODE)
+static void msm_mmrm_remove(struct platform_device *pdev)
+{
+	msm_mmrm_remove_int(pdev);
+}
+#else
+#define msm_mmrm_remove msm_mmrm_remove_int
+#endif
 
 static const struct of_device_id msm_mmrm_dt_match[] = {
 	{.compatible = "qcom,msm-mmrm"},
